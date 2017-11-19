@@ -1,61 +1,95 @@
 import { h, Component } from 'preact';
 import { connect } from 'react-redux';
 
-import {
-	increment,
-	changeTime,
-	selectCount,
-	selectTime,
-} from '../../redux/ducks/increment';
-import style from './style';
+import { fetchPokemon, selectPokemon, selectPokemonStatus } from '../../redux/ducks/pokemon';
 
-class Profile extends Component {
-	componentDidMount() {
-		// start a timer for the clock:
-		this.timer = setInterval(this.updateTime, 1000);
-	}
+class PokemonProfile extends Component {
+  componentDidMount() {
+    const { match: { params: { name } } } = this.props;
 
-	componentWillUnmount() {
-		clearInterval(this.timer);
-	}
+    this.props.dispatch(fetchPokemon(name));
+  }
+  render(props) {
+    const { fetching, pokemon } = this.props;
 
-	// update the current time
-	updateTime = () => {
-		this.props.dispatch(changeTime());
-		// this.setState({ time: Date.now() });
-	};
+    if (fetching) {
+      return (
+        <section className='pokemon-profile'>
+          <article className='pokemon-profile-summary'>
+            <ul className='pokemon-profile-stats'>
+              <li>
+                <span className='stat-value'>Cargando...</span>
+              </li>
+            </ul>
+          </article>
+        </section>
+      );
+    }
 
-	increment = () => {
-		this.props.dispatch(increment());
-		// this.setState({ count: this.state.count+1 });
-	};
-
-	render(props) {
-		const { match: { params: { user } } } = props;
-		const { time, count } = props;
-
-		return (
-			<div class={style.profile}>
-				<h1>Profile: {user}</h1>
-				<p>This is the user profile for a user named { user }.</p>
-
-				<div>Current time: {new Date(time).toLocaleString()}</div>
-
-				<p>
-					<button onClick={this.increment}>Click Me</button>
-					{' '}
-					Clicked {count} times.
-				</p>
-			</div>
-		);
-	}
+    return (
+      <section className='pokemon-profile'>
+        <article className='pokemon-profile-summary'>
+          <aside className='pokemon-profile-image'>
+            <img src={pokemon.sprites.front_default} alt={pokemon.name} />
+            <span>
+              # {
+                pokemon.pokedex_numbers
+                  .find(pokedex_number => pokedex_number.pokedex.name === 'national')
+                  .entry_number
+              }
+            </span>
+            <span className='pokemon-profile-type'>
+              {
+                pokemon.genera
+                  .find(genera => genera.language.name === 'es')
+                  .genus
+              }
+            </span>
+          </aside>
+          <ul className='pokemon-profile-stats'>
+            <li>
+              <span className='stat-value'>
+                {
+                  pokemon.types
+                    .sort((typeA, typeB) => typeA.slot - typeB.slot)
+                    .map(type => type.type.name).join(', ')
+                }
+              </span>
+              <span className='stat-label'>
+                {
+                  pokemon.types.length === 1
+                  ? 'Tipo'
+                  : 'Tipos'
+                }
+              </span>
+            </li>
+            <li>
+              <span className='stat-value'>{pokemon.height / 10} m</span>
+              <span className='stat-label'>Altura</span>
+            </li>
+            <li>
+              <span className='stat-value'>{pokemon.weight / 10} kg</span>
+              <span className='stat-label'>Peso</span>
+            </li>
+          </ul>
+        </article>
+        <p>
+          {
+            pokemon.flavor_text_entries
+              .find(entry => entry.language.name === 'es')
+              .flavor_text
+          }
+        </p>
+      </section>
+    );
+  }
 }
 
 const mapStateToProps = state => (
-	{
-		time: selectTime(state),
-		count: selectCount(state),
-	}
+  {
+    pokemon: selectPokemon(state),
+    fetching: selectPokemonStatus(state),
+  }
 );
 
-export default connect(mapStateToProps)(Profile);
+export default connect(mapStateToProps)(PokemonProfile);

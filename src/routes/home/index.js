@@ -1,13 +1,44 @@
 import { h, Component } from 'preact';
-import style from './style';
+import { Link } from 'react-router-dom';
+import { connect } from 'react-redux';
+import { fetchPokemons, selectPokemons, selectPokemonsStatus } from '../../redux/ducks/pokemons';
 
-export default class Home extends Component {
-	render() {
-		return (
-			<div class={style.home}>
-				<h1>Home</h1>
-				<p>This is the Home component.</p>
-			</div>
-		);
-	}
+class Home extends Component {
+  componentDidMount() {
+    this.props.dispatch(fetchPokemons());
+  }
+  render() {
+    const { fetching, pokemons } = this.props;
+
+    return (
+      <ul className='list'>
+        {
+          fetching
+          ? (
+            <li className='list-item'>
+              <span>Cargando...</span>
+            </li>
+          )
+          : pokemons.results.map(pokemon =>
+              (
+                <li key={pokemon.name}>
+                  <Link to={`/pokemons/${pokemon.name}`} className='list-item'>
+                    <span className='is-capitalized'>{pokemon.name}</span>
+                  </Link>
+                </li>
+              )
+          )
+        }
+      </ul>
+    );
+  }
 }
+
+const mapStateToProps = state => (
+  {
+    pokemons: selectPokemons(state),
+    fetching: selectPokemonsStatus(state),
+  }
+);
+
+export default connect(mapStateToProps)(Home);

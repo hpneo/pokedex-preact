@@ -1,34 +1,39 @@
 import { h, Component } from 'preact';
+import { connect } from 'react-redux';
+
+import {
+	increment,
+	changeTime,
+	selectCount,
+	selectTime,
+} from '../../redux/ducks/increment';
 import style from './style';
 
-export default class Profile extends Component {
-	state = {
-		time: Date.now(),
-		count: 10
-	};
-
-	// gets called when this route is navigated to
+class Profile extends Component {
 	componentDidMount() {
 		// start a timer for the clock:
 		this.timer = setInterval(this.updateTime, 1000);
 	}
 
-	// gets called just before navigating away from the route
 	componentWillUnmount() {
 		clearInterval(this.timer);
 	}
 
 	// update the current time
 	updateTime = () => {
-		this.setState({ time: Date.now() });
+		this.props.dispatch(changeTime());
+		// this.setState({ time: Date.now() });
 	};
 
 	increment = () => {
-		this.setState({ count: this.state.count+1 });
+		this.props.dispatch(increment());
+		// this.setState({ count: this.state.count+1 });
 	};
 
-	// Note: `user` comes from the URL, courtesy of our router
-	render({ match: { params: { user } } }, { time, count }) {
+	render(props) {
+		const { match: { params: { user } } } = props;
+		const { time, count } = props;
+
 		return (
 			<div class={style.profile}>
 				<h1>Profile: {user}</h1>
@@ -45,3 +50,12 @@ export default class Profile extends Component {
 		);
 	}
 }
+
+const mapStateToProps = state => (
+	{
+		time: selectTime(state),
+		count: selectCount(state),
+	}
+);
+
+export default connect(mapStateToProps)(Profile);
